@@ -65,12 +65,18 @@ $m365GroupsRequest = Send-M365ApiRequest -TenantId $configFile.tenantId `
 
 Write-Log -Status "Info" -Message "Grupos encontrados: $(($m365GroupsRequest|Measure-Object).Count)"
 
+Write-Log -Status "Info" -Message "Removendo grupos sem licenca do processamento"
+
+$m365LicenseGroups = $m365GroupsRequest | Where-Object{$_.assignedLicenses -ne $null}
+
+Write-Log -Status "Info" -Message "Grupos com licenca: $(($m365LicenseGroups|Measure-Object).Count)"
+
 $m365GroupsObj = @()
 $i = 1
 
-foreach($group in $m365GroupsRequest) {
+foreach($group in $m365LicenseGroups) {
 
-    Write-Log -Status "Info" -Message "Obtendo licencas do grupo $($i) de $(($m365GroupsRequest|Measure-Object).Count). Grupo: $($group.displayName)"
+    Write-Log -Status "Info" -Message "Obtendo licencas do grupo $($i) de $(($m365LicenseGroups|Measure-Object).Count). Grupo: $($group.displayName)"
 
     $assignedLicenses = @()
     foreach($license in $group.assignedLicenses){
