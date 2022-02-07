@@ -9,11 +9,11 @@ This script will make a request to the API informed in the appropriate parameter
 as expected by the API documentation to receive the response. Obviously, it is expected that you have a application registration in a Azure AD tenant already created.
 You can use both client credentials flow (Application Permission Type) and authorization code flow (Delegated Permission Type).
 
-.PARAMETER ClientID
-The client id attribute from Application Registration in Azure AD.
-
 .PARAMETER TenantID
 The tenant id attibute from Application Registratoin in Azure AD.
+
+.PARAMETER ApplicationId
+The client id attribute from Application Registration in Azure AD.
 
 .PARAMETER ClientSecret
 The client secret from Applition Registration in Azure AD.
@@ -46,18 +46,18 @@ There are requests that is expected to return a body. Please follow the Api docu
 .EXAMPLE
 The following example will get all users from Graph 1.0 endpoint in a tenant using client credentials grant flow:
 
-Send-M365ApiRequest.ps1 -ClientID XYZ -TenantID XYZ -ClientSecret XYZ -Api Graph -Method Get -Path /users
+Send-M365ApiRequest.ps1 -ApplicationId XYZ -TenantID XYZ -ClientSecret XYZ -Api Graph -Method Get -Path /users
 
 .EXAMPLE
 The example below will start a subscription for Exchange Audit logs and after list all log entries in each blob:
 
-Send-M365ApiRequest.ps1 -ClientID XYZ -TenantID XYZ -ClientSecret XYZ -Api ManagementApi -Method Post -Operation Start -ContentType Audit.Exchange
-Send-M365ApiRequest.ps1 -ClientID XYZ -TenantID XYZ -ClientSecret XYZ -Api ManagementApi -Method Get -Operation Content -ContentType Audit.Exchange
+Send-M365ApiRequest.ps1 -ApplicationId XYZ -TenantID XYZ -ClientSecret XYZ -Api ManagementApi -Method Post -Operation Start -ContentType Audit.Exchange
+Send-M365ApiRequest.ps1 -ApplicationId XYZ -TenantID XYZ -ClientSecret XYZ -Api ManagementApi -Method Get -Operation Content -ContentType Audit.Exchange
 
 .EXAMPLE
 This example shows how to list currently subscriptions in Management Api:
 
-Send-M365ApiRequest.ps1 -ClientID XYZ -TenantID XYZ -ClientSecret XYZ -Api ManagementApi -Method Get -Operation List
+Send-M365ApiRequest.ps1 -ApplicationId XYZ -TenantID XYZ -ClientSecret XYZ -Api ManagementApi -Method Get -Operation List
 
 .LINK
 https://github.com/deividfoggi/Send-M365ApiRequest
@@ -67,9 +67,9 @@ Function Send-M365ApiRequest {
 
     Param(
         [Parameter(Mandatory=$true)]
-        $ClientID,
-        [Parameter(Mandatory=$true)]
         $TenantID,
+        [Parameter(Mandatory=$true)]
+        $ApplicationId,
         [Parameter(Mandatory=$true)]
         $ClientSecret,
         [Parameter(Mandatory=$true)]
@@ -92,7 +92,7 @@ Function Send-M365ApiRequest {
 
     Function Get-AzureOAuthToken{
         Param(
-            [Parameter(Mandatory=$true)]$ClientID,
+            [Parameter(Mandatory=$true)]$ApplicationId,
             [Parameter(Mandatory=$true)]$TenantID,
             [Parameter(Mandatory=$false)]$TenandDomain,
             [Parameter(Mandatory=$false)]$ClientSecret,
@@ -107,11 +107,11 @@ Function Send-M365ApiRequest {
             "Graph*" {
                 if($OnBehalfOf -eq $true){
                     try{
-                        $stringUrl = "https://login.microsoft.com/" + $tenantID + "/oauth2/v2.0/authorize?client_id=" + $clientId + "&response_type=code&redirect_uri=" + $RedirectUrl + "&response_mode=query&scope=Calendars.ReadWrite&state=12345"
+                        $stringUrl = "https://login.microsoft.com/" + $tenantID + "/oauth2/v2.0/authorize?client_id=" + $ApplicationId + "&response_type=code&redirect_uri=" + $RedirectUrl + "&response_mode=query&scope=Calendars.ReadWrite&state=12345"
                         Write-Host $stringUrl
                         $authCode = Read-Host "Paste the authorization code here"
                         $stringUrl = "https://login.microsoftonline.com/" + $tenantId + "/oauth2/v2.0/token"
-                        $postData = "client_id=" + $clientId + "&scope=Calendars.ReadWrite&code=" + $authCode + "&redirect_uri=" + $RedirectUrl + "&grant_type=authorization_code&client_secret=" + $clientSecret
+                        $postData = "client_id=" + $ApplicationId + "&scope=Calendars.ReadWrite&code=" + $authCode + "&redirect_uri=" + $RedirectUrl + "&grant_type=authorization_code&client_secret=" + $clientSecret
                         $accessToken = Invoke-RestMethod -Method Post -Uri $stringUrl -ContentType "application/x-www-form-urlencoded" -Body $postData -ErrorAction Stop
                         return $accessToken
                     }
@@ -121,7 +121,7 @@ Function Send-M365ApiRequest {
                 }
                 else{
                     $stringUrl = "https://login.microsoftonline.com/" + $tenantId + "/oauth2/v2.0/token"
-                    $postData = "client_id=" + $clientId + "&scope=https://graph.microsoft.com/.default&client_secret=" + $clientSecret + "&grant_type=client_credentials"
+                    $postData = "client_id=" + $ApplicationId + "&scope=https://graph.microsoft.com/.default&client_secret=" + $clientSecret + "&grant_type=client_credentials"
                     try{
                         $accessToken = Invoke-RestMethod -Method post -Uri $stringUrl -ContentType "application/x-www-form-urlencoded" -Body $postData -ErrorAction Stop
                         return $accessToken
@@ -134,7 +134,7 @@ Function Send-M365ApiRequest {
             }
             "ManagementApi" {
                 $stringUrl = "https://login.microsoftonline.com/" + $tenantID + "/oauth2/token?api-version=1.0"
-                $postData = @{grant_type = "client_credentials"; resource = "https://manage.office.com"; client_id = $clientID; client_secret = $clientSecret}
+                $postData = @{grant_type = "client_credentials"; resource = "https://manage.office.com"; client_id = $ApplicationId; client_secret = $clientSecret}
                 try {
                     $accessToken = Invoke-RestMethod -Method Post -Uri $stringURL -Body $postData -ErrorAction Stop
                     return $accessToken
@@ -167,7 +167,7 @@ Function Send-M365ApiRequest {
     }
 
     #Gets a token
-    $BearerToken = Get-AzureOAuthToken -ClientID $ClientID -TenantID $TenantID -ClientSecret $ClientSecret -Api $Api
+    $BearerToken = Get-AzureOAuthToken -ApplicationId $ApplicationId -TenantID $TenantID -ClientSecret $ClientSecret -Api $Api
 
     #Creates an empty array to store the appended results in case of paging
     $queryResults = @()
