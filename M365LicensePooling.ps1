@@ -1,8 +1,8 @@
 #Include Graph API functions
 . .\Send-M365ApiRequest.ps1
 
-$reportFileName = "report_licenses_groups_m365"
 $configFile = Get-Content .\config.json | ConvertFrom-Json
+$reportFileName = $configFile.reportFileName
 $kronoStart = Get-Date
 
 Function Get-LicenseName {

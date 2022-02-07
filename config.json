@@ -1,5 +1,6 @@
 {
     "tenantId": "cdcae3ff-a663-4732-9cf5-1e33db81acf1",
     "applicationId": "88806a6c-1a2f-4855-b4fe-824de636dee2",
-    "clientSecret": "je4hb4l74N_~6-SuGV._DjZ3w.XEP7z7w~"
+    "clientSecret": "je4hb4l74N_~6-SuGV._DjZ3w.XEP7z7w~",
+    "reportFileName": "report_licenses_groups_m365"
 }
